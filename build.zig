@@ -24,9 +24,9 @@ pub fn build(b: *std.Build) !void {
     });
 
     if (target.result.os.tag == .windows) {
-        lib.defineCMacro("_WINDOWS", null);
-        lib.defineCMacro("_WIN32", null);
-        lib.defineCMacro("OPENDDL_STATIC_LIBARY", null);
+        lib.root_module.addCMacro("_WINDOWS", "");
+        lib.root_module.addCMacro("_WIN32", "");
+        lib.root_module.addCMacro("OPENDDL_STATIC_LIBARY", "");
     }
 
     lib.linkLibC();
@@ -54,7 +54,7 @@ pub fn build(b: *std.Build) !void {
     lib.addIncludePath(assimp.path("contrib/zlib"));
     lib.addIncludePath(assimp.path("contrib/openddlparser/include"));
 
-    lib.defineCMacro("RAPIDJSON_HAS_STDSTRING", "1");
+    lib.root_module.addCMacro("RAPIDJSON_HAS_STDSTRING", "1");
 
     lib.installConfigHeader(config_h);
     lib.installHeadersDirectory(
@@ -86,7 +86,7 @@ pub fn build(b: *std.Build) !void {
     var enable_all = false;
     var enabled_formats = std.BufSet.init(b.allocator);
     defer enabled_formats.deinit();
-    var tokenizer = std.mem.tokenize(u8, formats, ",");
+    var tokenizer = std.mem.tokenizeScalar(u8, formats, ',');
     while (tokenizer.next()) |format| {
         if (std.mem.eql(u8, format, "all")) {
             enable_all = true;
@@ -94,7 +94,7 @@ pub fn build(b: *std.Build) !void {
         }
 
         var found: bool = false;
-        inline for (comptime std.meta.declarations(sources.formats)) |format_files| {
+        inline for (comptime @typeInfo(sources.formats).@"struct".decls) |format_files| {
             if (std.mem.eql(u8, format_files.name, format)) {
                 try enabled_formats.insert(format);
                 found = true;
@@ -123,8 +123,8 @@ pub fn build(b: *std.Build) !void {
             const define_importer = b.fmt("ASSIMP_BUILD_NO_{}_IMPORTER", .{fmtUpperCase(format_files.name)});
             const define_exporter = b.fmt("ASSIMP_BUILD_NO_{}_EXPORTER", .{fmtUpperCase(format_files.name)});
 
-            lib.defineCMacro(define_importer, null);
-            lib.defineCMacro(define_exporter, null);
+            lib.root_module.addCMacro(define_importer, "");
+            lib.root_module.addCMacro(define_exporter, "");
         }
     }
 
@@ -132,8 +132,8 @@ pub fn build(b: *std.Build) !void {
         const define_importer = b.fmt("ASSIMP_BUILD_NO_{}_IMPORTER", .{fmtUpperCase(unsupported_format)});
         const define_exporter = b.fmt("ASSIMP_BUILD_NO_{}_EXPORTER", .{fmtUpperCase(unsupported_format)});
 
-        lib.defineCMacro(define_importer, null);
-        lib.defineCMacro(define_exporter, null);
+        lib.root_module.addCMacro(define_importer, "");
+        lib.root_module.addCMacro(define_exporter, "");
     }
 
     b.installArtifact(lib);
@@ -154,8 +154,8 @@ pub fn build(b: *std.Build) !void {
     }
     example_cpp.addIncludePath(assimp.path("include"));
     if (target.result.os.tag == .windows) {
-        example_cpp.defineCMacro("_WINDOWS", null);
-        example_cpp.defineCMacro("_WIN32", null);
+        example_cpp.root_module.addCMacro("_WINDOWS", "");
+        example_cpp.root_module.addCMacro("_WIN32", "");
     }
     b.installArtifact(example_cpp);
 
@@ -172,8 +172,8 @@ pub fn build(b: *std.Build) !void {
     example_c.linkLibC();
     example_c.addIncludePath(assimp.path("include"));
     if (target.result.os.tag == .windows) {
-        example_c.defineCMacro("_WINDOWS", null);
-        example_c.defineCMacro("_WIN32", null);
+        example_c.root_module.addCMacro("_WINDOWS", "");
+        example_c.root_module.addCMacro("_WIN32", "");
     }
     b.installArtifact(example_c);
 }
